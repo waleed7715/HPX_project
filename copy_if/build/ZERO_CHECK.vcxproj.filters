@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\walee\OneDrive\Desktop\HPX\HPX_project\copy_if\build\CMakeFiles\f9fe24ba7f136128b53d31d12f41c14e\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{06118872-55A8-3955-A3CC-B82DD75CBCB3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,10 @@
+^C:\USERS\WALEE\ONEDRIVE\DESKTOP\HPX\HPX_PROJECT\COPY_IF\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/walee/OneDrive/Desktop/HPX/HPX_project/copy_if -BC:/Users/walee/OneDrive/Desktop/HPX/HPX_project/copy_if/build --check-stamp-file C:/Users/walee/OneDrive/Desktop/HPX/HPX_project/copy_if/build/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
