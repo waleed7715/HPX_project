@@ -1,3 +1,5 @@
+# cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE=C:/Users/walee/Downloads/vcpkg/scripts/buildsystems/vcpkg.cmake
+
 cmake_minimum_required(VERSION 3.17)
 project(hpx_test VERSION 1.0.0)
 
@@ -20,13 +22,18 @@ endif()
 
 # set(CMAKE_CXX_FLAGS "-march=native")
 
-find_package(HPX REQUIRED)
-add_executable(copy_if_hpx_future_when_all copy_if_hpx_future_when_all.cpp)
-target_link_libraries(copy_if_hpx_future_when_all HPX::hpx HPX::wrap_main HPX::iostreams_component)
+# find_package(HPX REQUIRED)
+# add_executable(copy_if_hpx_future_when_all copy_if_hpx_future_when_all.cpp)
+# target_link_libraries(copy_if_hpx_future_when_all HPX::hpx HPX::wrap_main HPX::iostreams_component)
+
+# add_executable(copy_if_std_par copy_if_std_par.cpp)
+
+# add_executable(copy_if_std_seq copy_if_std_seq.cpp)
 
 find_package(HPX REQUIRED)
-add_executable(copy_if_std_par copy_if_std_par.cpp)
+add_executable(copy_if_test copy_if_test.cpp)
+target_link_libraries(copy_if_test HPX::hpx HPX::wrap_main HPX::iostreams_component)
 
-find_package(HPX REQUIRED)
-add_executable(sys_info_test sys_info_test.cpp)
-target_link_libraries(sys_info_test HPX::hpx HPX::wrap_main HPX::iostreams_component)
+# find_package(HPX REQUIRED)
+# add_executable(sys_info_test sys_info_test.cpp)
+# target_link_libraries(sys_info_test HPX::hpx HPX::wrap_main HPX::iostreams_component)
