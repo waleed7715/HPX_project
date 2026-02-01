@@ -6,8 +6,25 @@
 #include <vector>
 #include <execution>
 #include <chrono>
+#include <fstream>
 
 #include "Random.hpp"
+
+std::vector<int> load_vector(const std::string& filename)
+{
+    std::ifstream file(filename, std::ios::binary);
+    if (!file) {
+        throw std::runtime_error("Cannot open file: " + filename);
+    }
+    
+    size_t size;
+    file.read(reinterpret_cast<char*>(&size), sizeof(size));
+    
+    std::vector<int> data(size);
+    file.read(reinterpret_cast<char*>(data.data()), size * sizeof(int));
+    
+    return data;
+}
 
 int main()
 {
@@ -15,10 +32,10 @@ int main()
 
     for (auto size : vector_size)
     {
-        std::vector<int> source(size);
-
-        std::generate(std::execution::par, source.begin(), source.end(),
-            [size] { return Random::get(0, static_cast<int>(size - 1)); });
+        std::string filename = "test_data_" + std::to_string(size) + ".bin";
+        std::vector<int> source = load_vector(filename);
+        
+        std::cout << "Source size: " << source.size() << "\n";
         
         // Memory bound
         {
@@ -34,10 +51,11 @@ int main()
 
 			dest.resize(std::distance(dest.begin(), end_it));
 
-            std::chrono::duration<double> elapsed = end - start;
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
             
-            std::cout << "Source size: " << source.size() << ", Dest size: " << dest.size() 
-                << ", Time: " << elapsed << "\n";
+            std::cout << "Size: " << size
+                << ", Copied elements: " << dest.size() 
+                << ", Duration: " << duration << " us\n";
         }
 
 		// CPU bound
