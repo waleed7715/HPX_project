@@ -35,9 +35,9 @@ endif()
 # add_executable(copy_if_hpx_future_when_all copy_if_hpx_future_when_all.cpp)
 # target_link_libraries(copy_if_hpx_future_when_all HPX::hpx HPX::wrap_main HPX::iostreams_component)
 
-# add_executable(copy_if_std_par copy_if_std_par.cpp)
+add_executable(copy_if_std_par copy_if_std_par.cpp)
 
-add_executable(copy_if_std_seq copy_if_std_seq.cpp)
+# add_executable(copy_if_std_seq copy_if_std_seq.cpp)
 
 add_executable(generate_data generate_data.cpp)
 

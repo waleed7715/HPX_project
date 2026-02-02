@@ -34,10 +34,11 @@ int main()
 
 			dest.resize(std::distance(dest.begin(), end_it));
 
-            std::chrono::duration<double> elapsed = end - start;
-            
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+                end - start).count();
+
             std::cout << "Source size: " << source.size() << ", Dest size: " << dest.size() 
-                << ", Time: " << elapsed << "\n";
+                << ", Time: " << duration << " microseconds\n";
         }
 
 		// CPU bound
