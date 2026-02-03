@@ -1,29 +1,8 @@
-#include <algorithm>
-#include <iostream>
-#include <vector>
-#include <chrono>
-#include <fstream>
-
 #include <hpx/hpx.hpp>
 #include <hpx/hpx_init.hpp>
 
 #include "Random.hpp"
-
-std::vector<int> load_vector(const std::string& filename)
-{
-    std::ifstream file(filename, std::ios::binary);
-    if (!file) {
-        throw std::runtime_error("Cannot open file: " + filename);
-    }
-    
-    size_t size;
-    file.read(reinterpret_cast<char*>(&size), sizeof(size));
-    
-    std::vector<int> data(size);
-    file.read(reinterpret_cast<char*>(data.data()), size * sizeof(int));
-    
-    return data;
-}
+#include "Helper.hpp"
 
 int hpx_main()
 {
@@ -97,11 +76,11 @@ int hpx_main()
             auto elapsed_merge = std::chrono::duration_cast<std::chrono::microseconds>(end_merge - start_merge).count();
 
             std::cout << "Size: " << size
-                      << ",  Threads: " << threads
-                      << ", Copied elements: " << destination.size()
-                      << ", Find Duration: " << elapsed_find << " us"
-                      << ", Out Copy Duration: " << elapsed_merge << " us"
-                      << ", Total Duration: " << (elapsed_find + elapsed_merge) << " us\n";
+                << ",  Threads: " << threads
+                << ", Copied elements: " << destination.size()
+                << ", Find Duration: " << elapsed_find << " us"
+                << ", Out Copy Duration: " << elapsed_merge << " us"
+                << ", Total Duration: " << (elapsed_find + elapsed_merge) << " us\n";
         }
     }
 

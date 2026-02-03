@@ -31,13 +31,9 @@ endif()
 
 # set(CMAKE_CXX_FLAGS "-march=native")
 
-# find_package(HPX REQUIRED)
-# add_executable(copy_if_hpx_future_when_all copy_if_hpx_future_when_all.cpp)
-# target_link_libraries(copy_if_hpx_future_when_all HPX::hpx HPX::wrap_main HPX::iostreams_component)
-
 add_executable(copy_if_std_par copy_if_std_par.cpp)
 
-# add_executable(copy_if_std_seq copy_if_std_seq.cpp)
+add_executable(copy_if_std_seq copy_if_std_seq.cpp)
 
 add_executable(generate_data generate_data.cpp)
 
@@ -45,6 +41,12 @@ add_executable(generate_data generate_data.cpp)
 find_package(OpenMP REQUIRED)
 add_executable(copy_if_openmp copy_if_openmp.cpp)
 target_link_libraries(copy_if_openmp OpenMP::OpenMP_CXX)
+
+# TBB benchmark
+find_package(TBB REQUIRED)
+add_executable(copy_if_tbb copy_if_tbb.cpp)
+target_link_libraries(copy_if_tbb PRIVATE TBB::tbb)
+
 
 # Find Intel VTune ITT API (OPTIONAL - for profiling)
 find_path(ITT_INCLUDE_DIR ittnotify.h
@@ -100,7 +102,3 @@ if(HAVE_VTUNE)
     target_link_libraries(copy_if_hpx_clean ${ITT_LIBRARY})
     target_compile_definitions(copy_if_hpx_clean PRIVATE HAVE_VTUNE=1)
 endif()
-
-# find_package(HPX REQUIRED)
-# add_executable(sys_info_test sys_info_test.cpp)
-# target_link_libraries(sys_info_test HPX::hpx HPX::wrap_main HPX::iostreams_component)

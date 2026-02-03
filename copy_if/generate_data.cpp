@@ -1,17 +1,5 @@
-// generate_data.cpp - Run this once to create test data
-#include <iostream>
-#include <vector>
-#include <fstream>
-#include <algorithm>
 #include "Random.hpp"
-
-void save_vector(const std::string& filename, const std::vector<int>& data)
-{
-    std::ofstream file(filename, std::ios::binary);
-    size_t size = data.size();
-    file.write(reinterpret_cast<const char*>(&size), sizeof(size));
-    file.write(reinterpret_cast<const char*>(data.data()), size * sizeof(int));
-}
+#include "Helper.hpp"
 
 int main()
 {
