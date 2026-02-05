@@ -1,4 +1,4 @@
-# cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE=C:/Users/walee/Downloads/vcpkg/scripts/buildsystems/vcpkg.cmake
+# cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=C:/Users/walee/Downloads/vcpkg/scripts/buildsystems/vcpkg.cmake
 
 cmake_minimum_required(VERSION 3.17)
 project(hpx_test VERSION 1.0.0)
