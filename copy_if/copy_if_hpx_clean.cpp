@@ -26,8 +26,11 @@ int hpx_main()
         auto start = std::chrono::high_resolution_clock::now();
         
         auto end_it = hpx::copy_if(hpx::execution::par, 
-            source.begin(), source.end(), destination.begin(),
-            [](int elem) { return elem % 7 == 0; });
+            source.begin(), 
+            source.end(), 
+            destination.begin(), 
+            Pred<int>
+        );
 
         auto end = std::chrono::high_resolution_clock::now();
 

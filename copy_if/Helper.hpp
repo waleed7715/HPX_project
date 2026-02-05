@@ -45,4 +45,10 @@ void save_vector(const std::string& filename, const std::vector<int>& data)
     file.write(reinterpret_cast<const char*>(data.data()), size * sizeof(int));
 }
 
+template <typename T>
+bool Pred(const T& value)
+{
+    return value % 7 == 0;
+}
+
 #endif

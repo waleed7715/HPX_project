@@ -47,6 +47,10 @@ find_package(TBB REQUIRED)
 add_executable(copy_if_tbb copy_if_tbb.cpp)
 target_link_libraries(copy_if_tbb PRIVATE TBB::tbb)
 
+# Taskflow benchmark
+find_package(Taskflow REQUIRED)
+add_executable(copy_if_taskflow copy_if_taskflow.cpp)
+target_link_libraries(copy_if_taskflow PRIVATE Taskflow::Taskflow)
 
 # Find Intel VTune ITT API (OPTIONAL - for profiling)
 find_path(ITT_INCLUDE_DIR ittnotify.h

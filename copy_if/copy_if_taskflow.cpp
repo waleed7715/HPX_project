@@ -1,11 +1,13 @@
-#include <tbb/tbb.h>
+#include <taskflow/taskflow.hpp>
+#include <taskflow/algorithm/for_each.hpp> 
 
 #include "Random.hpp"
 #include "Helper.hpp"
 
-void copy_if_tbb(const std::vector<int>& source, int threads)
+void copy_if_taskflow(const std::vector<int>& source, int threads)
 {
-    tbb::global_control c(tbb::global_control::max_allowed_parallelism, threads);
+    tf::Executor executor(threads);
+    tf::Taskflow taskflow;
 
     const size_t n = source.size();
 
@@ -15,30 +17,29 @@ void copy_if_tbb(const std::vector<int>& source, int threads)
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    tbb::parallel_for(
-        tbb::blocked_range<int>(0, threads, 1),
-        [&](const tbb::blocked_range<int>& r)
+    taskflow.for_each_index(
+        size_t(0), size_t(threads), size_t(1),
+        [&](size_t thread_id)
         {
-            for (int thread_id = r.begin(); thread_id < r.end(); ++thread_id)
+            const size_t start_idx = thread_id * chunk_size;
+            const size_t end_idx = std::min(start_idx + chunk_size, n);
+            size_t local_count = 0;
+
+            for (size_t i = start_idx; i < end_idx; ++i)
             {
-                const size_t start_idx = thread_id * chunk_size;
-                const size_t end_idx = std::min(start_idx + chunk_size, n);
-                size_t local_count = 0;
-
-                for (size_t i = start_idx; i < end_idx; ++i)
+                flags[i] = Pred(source[i]);
+                if (flags[i])
                 {
-                    flags[i] = Pred(source[i]);
-                    if (flags[i])
-                    {
-                        ++local_count;
-                    }
+                    ++local_count;
                 }
-
-                local_counts[thread_id] = local_count;
             }
-        },
-        tbb::simple_partitioner()
+
+            local_counts[thread_id] = local_count;
+        }
     );
+
+    executor.run(taskflow).wait();
+    taskflow.clear();
 
     std::vector<size_t> offsets(threads);
     offsets[0] = 0;
@@ -50,28 +51,26 @@ void copy_if_tbb(const std::vector<int>& source, int threads)
     size_t total_count = offsets[threads - 1] + local_counts[threads - 1];
     std::vector<int> destination(total_count);
 
-    tbb::parallel_for(
-        tbb::blocked_range<int>(0, threads, 1),
-        [&](const tbb::blocked_range<int>& r)
+    taskflow.for_each_index(
+        size_t(0), size_t(threads), size_t(1),
+        [&](size_t thread_id)
         {
-            for (int thread_id = r.begin(); thread_id < r.end(); ++thread_id)
+            const size_t start_idx = thread_id * chunk_size;
+            const size_t end_idx = std::min(start_idx + chunk_size, n);
+
+            size_t write_idx = offsets[thread_id];
+
+            for (size_t i = start_idx; i < end_idx; ++i)
             {
-                const size_t start_idx = thread_id * chunk_size;
-                const size_t end_idx = std::min(start_idx + chunk_size, n);
-
-                size_t write_idx = offsets[thread_id];
-
-                for (size_t i = start_idx; i < end_idx; ++i)
+                if (flags[i])
                 {
-                    if (flags[i])
-                    {
-                        destination[write_idx++] = source[i];
-                    }
+                    destination[write_idx++] = source[i];
                 }
             }
-        },
-        tbb::simple_partitioner()
+        }
     );
+
+    executor.run(taskflow).wait();
 
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
@@ -98,7 +97,7 @@ int main(int argc, char* argv[])
 
         for (auto threads: num_threads)
         {
-            copy_if_tbb(source, threads);
+            copy_if_taskflow(source, threads);
         }
     }
     return 0;

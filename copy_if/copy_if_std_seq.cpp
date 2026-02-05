@@ -22,8 +22,7 @@ int main()
         auto start = std::chrono::high_resolution_clock::now();
         
         auto end_it = std::copy_if(std::execution::seq, source.begin(), source.end(),
-            dest.begin(),
-            [](int elem) { return elem % 7 == 0; });
+            dest.begin(), Pred<int>);
 
         auto end = std::chrono::high_resolution_clock::now();
 

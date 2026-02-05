@@ -9,7 +9,7 @@ void copy_if_openmp(const std::vector<int>& source, int threads)
     
     const size_t n = source.size();
 
-    std::vector<bool> flags(n);
+    std::vector<bool> flags(n, false);
     std::vector<size_t> local_counts(threads, 0);
     std::vector<size_t> offsets(threads);
 
@@ -18,18 +18,17 @@ void copy_if_openmp(const std::vector<int>& source, int threads)
     #pragma omp parallel
     {
         const int thread_id = omp_get_thread_num();
-        const int n_threads = omp_get_num_threads();
 
-        const size_t chunk_size = (n + n_threads - 1) / n_threads;
+        const size_t chunk_size = (n + threads - 1) / threads;
         const size_t start_idx = thread_id * chunk_size;
         const size_t end_idx = std::min(start_idx + chunk_size, n);
 
         size_t local_count = 0;
         for (size_t i = start_idx; i < end_idx; ++i)
         {
-            if (source[i] % 7 == 0)
+            flags[i] = Pred(source[i]);
+            if (flags[i])
             {
-                flags[i] = true;
                 ++local_count;
             }
         }

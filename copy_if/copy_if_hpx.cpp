@@ -19,7 +19,7 @@ int hpx_main(hpx::program_options::variables_map& vm)
     std::cout << "  Requested num_cores: " << req_cores << "\n\n";
 
     std::vector<int> vector_size{ 100'000, 10'000'000, 1'000'000'000 };
-    std::vector<int> num_threads{ req_cores };
+    std::vector<int> num_threads{ 1, 2, 4, 8, 16 };
 
     for (auto size : vector_size)
     {
@@ -37,8 +37,11 @@ int hpx_main(hpx::program_options::variables_map& vm)
             auto start = std::chrono::high_resolution_clock::now();
             
             auto end_it = hpx::copy_if(hpx::execution::par.with(n_cores), 
-                source.begin(), source.end(), destination.begin(),
-                [](int elem) { return elem % 7 == 0; });
+                source.begin(), 
+                source.end(), 
+                destination.begin(), 
+                Pred<int>
+            );
 
             auto end = std::chrono::high_resolution_clock::now();
 
