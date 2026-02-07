@@ -8,36 +8,45 @@
 #include <chrono>
 #include <string>
 #include <fstream>
+#include <stdexcept>
 
 #ifdef HAVE_VTUNE
 #include <ittnotify.h>
 #endif
 
-std::vector<int> load_vector(const std::string& filename)
+#ifndef COMMON_DATA_DIR
+#define COMMON_DATA_DIR "."
+#endif
+
+inline std::vector<int> load_vector(const std::string& filename)
 {
-    #ifdef HAVE_VTUNE
+#ifdef HAVE_VTUNE
     __itt_pause();
-    #endif
- 
-    std::ifstream file(filename, std::ios::binary);
+#endif
+
+    const std::string full_path =
+        std::string(COMMON_DATA_DIR) + "/" + filename;
+
+    std::ifstream file(full_path, std::ios::binary);
     if (!file) {
-        throw std::runtime_error("Cannot open file: " + filename);
+        throw std::runtime_error("Cannot open file: " + full_path);
     }
-    
+
     size_t size;
     file.read(reinterpret_cast<char*>(&size), sizeof(size));
-    
+
     std::vector<int> data(size);
     file.read(reinterpret_cast<char*>(data.data()), size * sizeof(int));
-    
-    #ifdef HAVE_VTUNE
+
+#ifdef HAVE_VTUNE
     __itt_resume();
-    #endif
-    
+#endif
+
     return data;
 }
 
-void save_vector(const std::string& filename, const std::vector<int>& data)
+inline void save_vector(const std::string& filename,
+                        const std::vector<int>& data)
 {
     std::ofstream file(filename, std::ios::binary);
     size_t size = data.size();

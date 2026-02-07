@@ -1,2 +1,6 @@
 copy_if/build/
 copy_if/test_data_*
+find_if/build/
+find_if/test_data_*
+common/build/
+common/test_data_*

@@ -6,7 +6,7 @@
       "type": "cppvsdbg",
       "request": "launch",
       "program": "${workspaceFolder}/copy_if/build/Debug/copy_if_hpx.exe",
-      "args": [],
+      "args": ["--num-cores=1", "--hpx:threads=1"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/copy_if",
       "environment": [],

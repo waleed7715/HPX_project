@@ -13,10 +13,6 @@ int hpx_main(hpx::program_options::variables_map& vm)
         req_cores = hpx::get_num_worker_threads();
     }
 
-    std::cout << "HPX Configuration:\n";
-    std::cout << "  OS threads: " << hpx::get_os_thread_count() << "\n";
-    std::cout << "  Requested num_cores: " << req_cores << "\n\n";
-
     std::vector<int> vector_size{ 100'000, 10'000'000, 1'000'000'000 };
     std::vector<int> num_threads{ req_cores };
 
@@ -30,28 +26,28 @@ int hpx_main(hpx::program_options::variables_map& vm)
         for (auto threads : num_threads)
         {
             hpx::execution::experimental::num_cores n_cores(threads);
-
-            std::vector<int> destination(size);
             
             auto start = std::chrono::high_resolution_clock::now();
             
-            auto end_it = hpx::copy_if(hpx::execution::par.with(n_cores), 
+            auto it = hpx::find_if(hpx::execution::par.with(n_cores), 
                 source.begin(), 
                 source.end(), 
-                destination.begin(), 
                 Pred<int>
             );
 
             auto end = std::chrono::high_resolution_clock::now();
 
-            destination.resize(std::distance(destination.begin(), end_it));
+            if (it != source.end()) {
+                std::cout << "Found value: " << *it << "\n";
+            } else {
+                std::cout << "Value not found.\n";
+            }
 
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
                 end - start).count();
             
             std::cout << "Size: " << size
                 << ",  Threads: " << threads
-                << ", Copied elements: " << destination.size() 
                 << ", Duration: " << duration << " us\n";
         }
     }
