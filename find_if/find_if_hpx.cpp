@@ -13,6 +13,10 @@ int hpx_main(hpx::program_options::variables_map& vm)
         req_cores = hpx::get_num_worker_threads();
     }
 
+    std::cout << "HPX Configuration:\n";
+    std::cout << "  OS threads: " << hpx::get_os_thread_count() << "\n";
+    std::cout << "  Requested num_cores: " << req_cores << "\n\n";
+
     std::vector<int> vector_size{ 100'000, 10'000'000, 1'000'000'000 };
     std::vector<int> num_threads{ req_cores };
 

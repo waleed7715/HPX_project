@@ -178,6 +178,17 @@
       "console": "externalTerminal"
     },
     {
+      "name": "Debug: find_if HPX (Debug Build)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/find_if/build/Debug/find_if_hpx.exe",
+      "args": ["--num-cores=1", "--hpx:threads=1"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/find_if",
+      "environment": [],
+      "console": "externalTerminal"
+    },
+    {
       "name": "C/C++ Runner: Debug Session",
       "type": "cppdbg",
       "request": "launch",
