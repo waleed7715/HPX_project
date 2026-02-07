@@ -14,6 +14,7 @@ void copy_if_taskflow(const std::vector<int>& source, int threads)
     std::vector<bool> flags(n, false);
     std::vector<size_t> local_counts(threads, 0);
     const size_t chunk_size = (n + threads - 1) / threads;
+    std::vector<int> destination(n);
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -49,7 +50,6 @@ void copy_if_taskflow(const std::vector<int>& source, int threads)
     }
 
     size_t total_count = offsets[threads - 1] + local_counts[threads - 1];
-    std::vector<int> destination(total_count);
 
     taskflow.for_each_index(
         size_t(0), size_t(threads), size_t(1),
@@ -73,6 +73,9 @@ void copy_if_taskflow(const std::vector<int>& source, int threads)
     executor.run(taskflow).wait();
 
     auto end = std::chrono::high_resolution_clock::now();
+
+    destination.resize(total_count);
+
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
     std::cout << "Size: " << n
