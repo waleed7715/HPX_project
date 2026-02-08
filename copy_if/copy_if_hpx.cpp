@@ -5,6 +5,10 @@
 #include "Random.hpp"
 #include "Helper.hpp"
 
+#ifdef HAVE_VTUNE
+#include <ittnotify.h>
+#endif
+
 int hpx_main(hpx::program_options::variables_map& vm)
 {
     int req_cores = vm["num-cores"].as<int>();
@@ -35,12 +39,20 @@ int hpx_main(hpx::program_options::variables_map& vm)
             
             auto start = std::chrono::high_resolution_clock::now();
             
+            #ifdef HAVE_VTUNE
+            __itt_resume();
+            #endif
+
             auto end_it = hpx::copy_if(hpx::execution::par.with(n_cores), 
                 source.begin(), 
                 source.end(), 
                 destination.begin(), 
                 Pred<int>
             );
+    
+            #ifdef HAVE_VTUNE
+            __itt_pause();
+            #endif
 
             auto end = std::chrono::high_resolution_clock::now();
 
@@ -61,6 +73,10 @@ int hpx_main(hpx::program_options::variables_map& vm)
 
 int main(int argc, char* argv[])
 {
+    #ifdef HAVE_VTUNE
+    __itt_pause();
+    #endif
+    
     hpx::program_options::options_description desc_commandline(
         "Usage: " HPX_APPLICATION_STRING " [options]");
     

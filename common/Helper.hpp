@@ -10,20 +10,12 @@
 #include <fstream>
 #include <stdexcept>
 
-#ifdef HAVE_VTUNE
-#include <ittnotify.h>
-#endif
-
 #ifndef COMMON_DATA_DIR
 #define COMMON_DATA_DIR "."
 #endif
 
 inline std::vector<int> load_vector(const std::string& filename)
 {
-#ifdef HAVE_VTUNE
-    __itt_pause();
-#endif
-
     const std::string full_path =
         std::string(COMMON_DATA_DIR) + "/" + filename;
 
@@ -37,10 +29,6 @@ inline std::vector<int> load_vector(const std::string& filename)
 
     std::vector<int> data(size);
     file.read(reinterpret_cast<char*>(data.data()), size * sizeof(int));
-
-#ifdef HAVE_VTUNE
-    __itt_resume();
-#endif
 
     return data;
 }

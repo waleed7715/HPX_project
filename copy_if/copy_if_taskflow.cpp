@@ -4,6 +4,10 @@
 #include "Random.hpp"
 #include "Helper.hpp"
 
+#ifdef HAVE_VTUNE
+#include <ittnotify.h>
+#endif
+
 void copy_if_taskflow(const std::vector<int>& source, int threads)
 {
     tf::Executor executor(threads);
@@ -15,6 +19,10 @@ void copy_if_taskflow(const std::vector<int>& source, int threads)
     std::vector<size_t> local_counts(threads, 0);
     const size_t chunk_size = (n + threads - 1) / threads;
     std::vector<int> destination(n);
+
+    #ifdef HAVE_VTUNE
+    __itt_resume();
+    #endif
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -74,6 +82,10 @@ void copy_if_taskflow(const std::vector<int>& source, int threads)
 
     auto end = std::chrono::high_resolution_clock::now();
 
+    #ifdef HAVE_VTUNE
+    __itt_pause();
+    #endif
+
     destination.resize(total_count);
 
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
@@ -86,6 +98,10 @@ void copy_if_taskflow(const std::vector<int>& source, int threads)
 
 int main(int argc, char* argv[])
 {
+    #ifdef HAVE_VTUNE
+    __itt_pause();
+    #endif
+
     std::vector<int> vector_size{ 100'000, 10'000'000, 1'000'000'000 };
     std::vector<int> num_threads{ 1, 2, 4, 8, 16 };
 
