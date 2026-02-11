@@ -1,13 +1,14 @@
 #include <hpx/hpx.hpp>
 #include <hpx/hpx_init.hpp>
 #include <hpx/program_options.hpp>
-
-#include "Random.hpp"
-#include "Helper.hpp"
+#include <hpx/threading_base/scoped_annotation.hpp>
 
 #ifdef HAVE_VTUNE
 #include <ittnotify.h>
 #endif
+
+#include "Random.hpp"
+#include "Helper.hpp"
 
 int hpx_main(hpx::program_options::variables_map& vm)
 {
@@ -17,19 +18,19 @@ int hpx_main(hpx::program_options::variables_map& vm)
         req_cores = hpx::get_num_worker_threads();
     }
 
-    std::cout << "HPX Configuration:\n";
-    std::cout << "  OS threads: " << hpx::get_os_thread_count() << "\n";
-    std::cout << "  Requested num_cores: " << req_cores << "\n\n";
+    // std::cout << "HPX Configuration:\n";
+    // std::cout << "  OS threads: " << hpx::get_os_thread_count() << "\n";
+    // std::cout << "  Requested num_cores: " << req_cores << "\n\n";
 
-    std::vector<int> vector_size{ 100'000, 10'000'000, 1'000'000'000 };
-    std::vector<int> num_threads{ req_cores };
+    std::vector<int> vector_size{ 10'000'000 };
+    std::vector<int> num_threads{ 8 };
 
     for (auto size : vector_size)
     {
         std::string filename = "test_data_" + std::to_string(size) + ".bin";
         std::vector<int> source = load_vector(filename);
         
-        std::cout << "Source size: " << source.size() << "\n";
+        // std::cout << "Source size: " << source.size() << "\n";
 
         for (auto threads : num_threads)
         {
@@ -38,10 +39,6 @@ int hpx_main(hpx::program_options::variables_map& vm)
             std::vector<int> destination(size);
             
             auto start = std::chrono::high_resolution_clock::now();
-            
-            #ifdef HAVE_VTUNE
-            __itt_resume();
-            #endif
 
             auto end_it = hpx::copy_if(hpx::execution::par.with(n_cores), 
                 source.begin(), 
@@ -49,10 +46,6 @@ int hpx_main(hpx::program_options::variables_map& vm)
                 destination.begin(), 
                 Pred<int>
             );
-    
-            #ifdef HAVE_VTUNE
-            __itt_pause();
-            #endif
 
             auto end = std::chrono::high_resolution_clock::now();
 
@@ -73,10 +66,6 @@ int hpx_main(hpx::program_options::variables_map& vm)
 
 int main(int argc, char* argv[])
 {
-    #ifdef HAVE_VTUNE
-    __itt_pause();
-    #endif
-    
     hpx::program_options::options_description desc_commandline(
         "Usage: " HPX_APPLICATION_STRING " [options]");
     

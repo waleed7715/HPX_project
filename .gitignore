@@ -4,3 +4,5 @@ find_if/build/
 find_if/test_data_*
 common/build/
 common/test_data_*
+get_data*
+benchmark_results*

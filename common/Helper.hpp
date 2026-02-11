@@ -45,7 +45,7 @@ inline void save_vector(const std::string& filename,
 template <typename T>
 bool Pred(const T& value)
 {
-    return value % 7 == 0;
+    return value % 42 == 0;
 }
 
 #endif
