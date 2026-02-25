@@ -1,0 +1,168 @@
+On 10'000'000 input size with different number of chunks (Avg of 5000 runs, unit of time is us):
+================================================================================================
+
+1 HPX THREAD
+
+default		F1,		F2,	F3_start,	F3_wait, 	F4	Duration
+		5081.2854	4.0634	6.8106		2706.6734	2.9886	8346.875
+
+Total Duration:
+Min = 5921 us 
+Max = 59767 us
+
+threads*4	F1,		F2,	F3_start,	F3_wait, 	F4	Duration
+		4183.7144	10.4608	6.4802		2456.1642	2.7992	7165.4358
+
+Total Duration:
+Min = 5766 us 
+Max = 24076 us
+
+threads*2	F1,		F2,	F3_start,	F3_wait, 	F4	Duration
+		7696.2738	10.525	5.1546		4214.344	2.2462	12397.878
+
+Total Duration:
+Min = 10248 us 
+Max = 28061 us
+
+threads		F1,		F2,	F3_start,	F3_wait, 	F4	Duration
+		14932.0872	11.6742	4.4462		7875.8094	1.9584	23279.6494
+
+Total Duration:
+Min = 20424 us 
+Max = 40346 us
+
+* For 1 thread -> the best avg duration was achieved on threads * 4 number of chunks
+
+================================================================================================
+
+2 HPX THREAD
+
+default		F1,		F2,	F3_start,	F3_wait, 	F4	Duration
+		3381.2232	2.9168	9.548		2955.405	2.2068	6895.6224
+
+Total Duration:
+Min = 4871 us 
+Max = 16280 us
+
+threads*4	F1,		F2,	F3_start,	F3_wait, 	F4	Duration
+		3586.0126	9.095	9.9046		2941.5562	2.325	7097.3552
+
+Total Duration:
+Min = 4994 us 
+Max = 17948 us
+
+threads*2	F1,		F2,	F3_start,	F3_wait, 	F4	Duration
+		4119.8206	10.5006	6.3656		2422.3586	2.8188	7066.4796
+
+Total Duration:
+Min = 5728 us 
+Max = 17094 us
+
+threads		F1,		F2,	F3_start,	F3_wait, 	F4	Duration
+		7699.5374	10.6138	5.2098		4273.6844	2.2322	12458.5226
+
+Total Duration:
+Min = 10195 us 
+Max = 71714 us
+
+* For 2 thread -> the best avg duration was achieved on default followed by threads * 2 number of chunks
+
+================================================================================================
+
+4 HPX THREAD
+
+default		F1		F2	F3_start	F3_wait 	F4	Duration
+		2985.7898	3.225	14.736		2452.4952	4.9112	6067.9188
+					
+Total Duration:
+Min = 4921 us
+Max = 18276 us
+
+threads*4	F1		F2	F3_start	F3_wait 	F4	Duration
+		2778.853	9.4794	14.7456		2406.0492	4.4886	5801.7994
+									
+Total Duration:
+Min = 4827 us
+Max = 31579 us
+
+threads*2	F1		F2	F3_start	F3_wait 	F4	Duration
+		3836.7728	9.4214	9.995		3036.456	2.315	7450.8824
+								
+Total Duration:
+Min = 5061 us
+Max = 21777 us
+
+threads		F1		F2	F3_start	F3_wait 	F4	Duration
+		4285.0242	10.6758	6.6538		2521.453	2.7872	7333.4714
+												
+Total Duration:
+Min = 5705 us
+Max = 22041 us
+
+* For 4 thread -> the best avg duration was achieved on threads * 4 number of chunks 
+
+================================================================================================
+
+8 HPX THREADS
+
+default		F1		F2	F3_start	F3_wait 	F4	Duration
+		3104.9912	4.283	39.4038		2613.7808	6.5012	6454.326
+
+Total Duration:
+Min = 5137 us
+Max = 33998 us
+
+threads*4	F1		F2	F3_start	F3_wait 	F4	Duration
+		3406.9662	11.2494	42.0524		2708.0066	6.7118	6929.0446
+
+Total Duration:
+Min = 5199 us 
+Max = 20337 us
+
+threads*2	F1,		F2,	F3_start,	F3_wait, 	F4	Duration
+		3025.7336	9.9072	15.2442		2508.4366	4.7142	6174.7134
+
+Total Duration:
+Min = 4875 us 
+Max = 18150 us
+
+threads		F1,		F2,	F3_start,	F3_wait, 	F4	Duration
+		4144.0162	10.12	10.977		3188.7304	2.5592	7945.9382
+
+Total Duration:
+Min = 5197 us 
+Max = 28029 us
+
+* For 8 threads -> the best avg duration was achieved on threads * 2 number of chunks
+
+================================================================================================
+
+16 HPX THREADS
+
+default		F1		F2	F3_start	F3_wait 	F4	Duration
+		2773.8432	3.6448	34.0104		2419.9362	6.544	5883.6728
+
+Total Duration:
+Min = 5013 us
+Max = 20834 us
+
+threads * 4	F1		F2	F3_start	F3_wait 	F4	Duration
+		2788.3192	10.772	63.803		2478.3462	10.9934	6066.6742
+
+Total Duration:
+Min = 5170 us
+Max = 20715 us
+
+threads * 2	F1		F2	F3_start	F3_wait 	F4	Duration
+		2689.6258	8.9588	31.323		2322.8538	5.9012	5683.7742
+
+Total Duration:
+Min = 4929 us
+Max = 20409 us
+
+threads		F1		F2	F3_start	F3_wait 	F4	Duration
+		2752.611	9.179	14.4264		2397.9786	4.4308	5767.8974
+
+Total Duration:
+Min = 4858 us
+Max = 26290 us

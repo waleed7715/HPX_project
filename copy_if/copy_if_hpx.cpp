@@ -12,34 +12,37 @@
 
 int hpx_main(hpx::program_options::variables_map& vm)
 {
-    int req_cores = vm["num-cores"].as<int>();
-    
-    if (req_cores <= 0) {
-        req_cores = hpx::get_num_worker_threads();
+    int hpx_threads = vm["hpx_threads"].as<int>();
+    int input_size = vm["input_size"].as<int>();
+
+    if (hpx_threads <= 0) {
+        hpx_threads = hpx::get_num_worker_threads();
     }
 
-    // std::cout << "HPX Configuration:\n";
-    // std::cout << "  OS threads: " << hpx::get_os_thread_count() << "\n";
-    // std::cout << "  Requested num_cores: " << req_cores << "\n\n";
+    if (input_size <= 0) {
+        input_size = 100'000;
+    }
 
-    std::vector<int> vector_size{ 10'000'000 };
-    std::vector<int> num_threads{ 8 };
+    std::vector<int> vector_size{ input_size };
+    std::vector<int> num_threads{ hpx_threads };
 
     for (auto size : vector_size)
     {
         std::string filename = "test_data_" + std::to_string(size) + ".bin";
         std::vector<int> source = load_vector(filename);
-        
-        // std::cout << "Source size: " << source.size() << "\n";
 
         for (auto threads : num_threads)
         {
             hpx::execution::experimental::num_cores n_cores(threads);
 
+            // Use the following to define number of chunks
+            // std::size_t chunk_size = size / (threads);
+            // hpx::execution::static_chunk_size(chunk_size) -> passed to the execution policy
+
             std::vector<int> destination(size);
             
             auto start = std::chrono::high_resolution_clock::now();
-
+            
             auto end_it = hpx::copy_if(hpx::execution::par.with(n_cores), 
                 source.begin(), 
                 source.end(), 
@@ -70,9 +73,12 @@ int main(int argc, char* argv[])
         "Usage: " HPX_APPLICATION_STRING " [options]");
     
     desc_commandline.add_options()
-        ("num-cores",
+        ("hpx_threads",
             hpx::program_options::value<int>()->default_value(0),
-            "Number of cores for num_cores (0 = use all HPX worker threads)")
+            "Number of cores for num_cores (0 = use all)")
+        ("input_size",
+            hpx::program_options::value<int>()->default_value(100'000),
+            "Sizes of input vector (default: 100000)")
         ;
     
     hpx::init_params init_args;
