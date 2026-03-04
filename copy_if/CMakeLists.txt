@@ -72,16 +72,16 @@ endif()
 #     target_compile_definitions(copy_if_std_par PRIVATE HAVE_VTUNE=1)
 # endif()
 
-# add_executable(copy_if_std_seq copy_if_std_seq.cpp)
-# target_include_directories(copy_if_std_seq PRIVATE ${COMMON_INCLUDE_DIR})
-# target_compile_definitions(copy_if_std_seq
-#     PRIVATE COMMON_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../common"
-# )
-# if(HAVE_VTUNE)
-#     target_include_directories(copy_if_std_seq PRIVATE ${ITT_INCLUDE_DIR})
-#     target_link_libraries(copy_if_std_seq PRIVATE ${ITT_LIBRARY})
-#     target_compile_definitions(copy_if_std_seq PRIVATE HAVE_VTUNE=1)
-# endif()
+add_executable(copy_if_std_seq copy_if_std_seq.cpp)
+target_include_directories(copy_if_std_seq PRIVATE ${COMMON_INCLUDE_DIR})
+target_compile_definitions(copy_if_std_seq
+    PRIVATE COMMON_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../common"
+)
+if(HAVE_VTUNE)
+    target_include_directories(copy_if_std_seq PRIVATE ${ITT_INCLUDE_DIR})
+    target_link_libraries(copy_if_std_seq PRIVATE ${ITT_LIBRARY})
+    target_compile_definitions(copy_if_std_seq PRIVATE HAVE_VTUNE=1)
+endif()
 
 # # ---------------- OpenMP ----------------
 # find_package(OpenMP REQUIRED)
@@ -152,14 +152,14 @@ endif()
 #     target_compile_definitions(copy_if_test PRIVATE HAVE_VTUNE=1)
 # endif()
 
-# add_executable(copy_if_hpx_clean copy_if_hpx_clean.cpp)
-# target_include_directories(copy_if_hpx_clean PRIVATE ${COMMON_INCLUDE_DIR})
-# target_compile_definitions(copy_if_hpx_clean
-#     PRIVATE COMMON_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../common"
-# )
-# target_link_libraries(copy_if_hpx_clean PRIVATE HPX::hpx HPX::wrap_main HPX::iostreams_component)
-# if(HAVE_VTUNE)
-#     target_include_directories(copy_if_hpx_clean PRIVATE ${ITT_INCLUDE_DIR})
-#     target_link_libraries(copy_if_hpx_clean PRIVATE ${ITT_LIBRARY})
-#     target_compile_definitions(copy_if_hpx_clean PRIVATE HAVE_VTUNE=1)
-# endif()
+add_executable(copy_if_hpx_clean copy_if_hpx_clean.cpp)
+target_include_directories(copy_if_hpx_clean PRIVATE ${COMMON_INCLUDE_DIR})
+target_compile_definitions(copy_if_hpx_clean
+    PRIVATE COMMON_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../common"
+)
+target_link_libraries(copy_if_hpx_clean PRIVATE HPX::hpx HPX::wrap_main HPX::iostreams_component)
+if(HAVE_VTUNE)
+    target_include_directories(copy_if_hpx_clean PRIVATE ${ITT_INCLUDE_DIR})
+    target_link_libraries(copy_if_hpx_clean PRIVATE ${ITT_LIBRARY})
+    target_compile_definitions(copy_if_hpx_clean PRIVATE HAVE_VTUNE=1)
+endif()

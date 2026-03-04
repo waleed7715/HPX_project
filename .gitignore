@@ -6,3 +6,6 @@ common/build/
 common/test_data_*
 get_data*
 benchmark_results*
+csv/*
+*.csv
+copy_if/csv/*

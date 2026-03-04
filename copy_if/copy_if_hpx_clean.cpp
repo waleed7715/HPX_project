@@ -4,22 +4,18 @@
 #include "Random.hpp"
 #include "Helper.hpp"
 
-int hpx_main()
+int hpx_main(hpx::program_options::variables_map& vm)
 {
-    int threads = hpx::get_num_worker_threads();
-    
-    std::cout << "HPX Configuration (CLEAN VERSION):\n";
-    std::cout << "  OS threads: " << hpx::get_os_thread_count() << "\n";
-    std::cout << "  Worker threads: " << threads << "\n\n";
+    int input_size = vm["input_size"].as<int>();
 
-    std::vector<int> vector_size{ 100'000, 10'000'000, 1'000'000'000 };
+    int threads = hpx::get_num_worker_threads();
+
+    std::vector<int> vector_size{ input_size };
 
     for (auto size : vector_size)
     {
         std::string filename = "test_data_" + std::to_string(size) + ".bin";
         std::vector<int> source = load_vector(filename);
-        
-        std::cout << "Source size: " << source.size() << "\n";
 
         std::vector<int> destination(size);
         
@@ -39,10 +35,10 @@ int hpx_main()
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
             end - start).count();
         
-        std::cout << "Size: " << size
-            << ",  Threads: " << threads
-            << ", Copied: " << destination.size() 
-            << ", Duration: " << duration << " us\n";
+        std::cout << size
+            << ", " <<threads
+            << ", " << destination.size() 
+            << ", " << duration << "\n";
     }
 
     return hpx::finalize();
@@ -50,5 +46,17 @@ int hpx_main()
 
 int main(int argc, char* argv[])
 {
-    return hpx::init(argc, argv);
+    hpx::program_options::options_description desc_commandline(
+        "Usage: " HPX_APPLICATION_STRING " [options]");
+    
+    desc_commandline.add_options()
+        ("input_size",
+            hpx::program_options::value<int>()->default_value(100'000),
+            "Sizes of input vector (default: 100000)")
+        ;
+    
+    hpx::init_params init_args;
+    init_args.desc_cmdline = desc_commandline;
+    
+    return hpx::init(hpx_main, argc, argv, init_args);
 }

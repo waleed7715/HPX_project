@@ -62,11 +62,10 @@ int hpx_main(hpx::program_options::variables_map& vm)
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
                     end - start).count();
                 
-                std::cout << "Size: " << size
-                    << ",  Threads: " << threads
-                    << ", chunk_size: " << chunk_size
-                    << ", Copied elements: " << destination.size() 
-                    << ", Duration: " << duration << " us\n";
+                std::cout << size
+                    << ", " <<threads
+                    << ", " << destination.size() 
+                    << ", " << duration << "\n";
             };
 
             if (chunk_size > 0) {
