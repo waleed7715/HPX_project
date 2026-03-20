@@ -1,5 +1,6 @@
 # cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=Release -DHPX_DIR="C:/HPX_master/lib/cmake/HPX" -DCMAKE_TOOLCHAIN_FILE=C:/Users/walee/Downloads/vcpkg/scripts/buildsystems/vcpkg.cmake
 # cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DHPX_DIR="C:/HPX_master/lib/cmake/HPX" -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+# cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DHPX_DIR=/home/waleed/hpx_master/lib/cmake/HPX -DCMAKE_TOOLCHAIN_FILE=/home/waleed/vcpkg/scripts/buildsystems/vcpkg.cmake
 
 cmake_minimum_required(VERSION 3.17)
 project(hpx_test VERSION 1.0.0)

@@ -1,0 +1,2 @@
+Just a test run on 48 cores to see if TBB keeps scaling up after 24 or does it flatlines.
+TBB max speedup is ~4.13x at 48 cores

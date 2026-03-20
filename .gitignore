@@ -6,6 +6,7 @@ common/build/
 common/test_data_*
 get_data*
 benchmark_results*
-csv/*
-*.csv
-copy_if/csv/*
+csv/.vscode
+copy_if/csv/.vscode/c_cpp_properties.json
+copy_if/csv/.vscode/launch.json
+copy_if/csv/.vscode/settings.json

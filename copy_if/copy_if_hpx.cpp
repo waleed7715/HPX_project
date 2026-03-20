@@ -46,6 +46,11 @@ int hpx_main(hpx::program_options::variables_map& vm)
             auto run = [&](auto exec_policy) {
                 std::vector<int> destination(size);
                 
+                #if HPX_HAVE_ITTNOTIFY != 0 && !defined(HPX_HAVE_APEX)
+                    static hpx::util::itt::event ts("TIMER_START");
+                    hpx::util::itt::mark_event mts(ts);
+                #endif
+
                 auto start = std::chrono::high_resolution_clock::now();
                 
                 auto end_it = hpx::copy_if(exec_policy,
@@ -54,18 +59,24 @@ int hpx_main(hpx::program_options::variables_map& vm)
                     destination.begin(), 
                     Pred<int>
                 );
-
+                
                 auto end = std::chrono::high_resolution_clock::now();
 
+                #if HPX_HAVE_ITTNOTIFY != 0 && !defined(HPX_HAVE_APEX)
+                        static hpx::util::itt::event e("TIMER_END");
+                        hpx::util::itt::mark_event m(e);
+                #endif
+                
                 destination.resize(std::distance(destination.begin(), end_it));
 
                 auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
                     end - start).count();
                 
                 std::cout << size
-                    << ", " <<threads
-                    << ", " << destination.size() 
-                    << ", " << duration << "\n";
+                << ", " <<threads
+                << ", " << num_chunks
+                << ", " << destination.size() 
+                << ", " << duration << "\n";
             };
 
             if (chunk_size > 0) {
