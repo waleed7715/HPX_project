@@ -1,0 +1,1 @@
+This benchmark uses the new bulk async execute with bound priority without no stacks, this was done to measure whether it gives us some improvement over initially bound

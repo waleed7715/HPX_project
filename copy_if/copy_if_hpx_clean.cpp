@@ -38,6 +38,9 @@ int hpx_main(hpx::program_options::variables_map& vm)
         auto run = [&](auto exec_policy) {
             std::vector<int> destination(size);
             
+            auto const priority_policy = hpx::execution::experimental::with_priority(
+                exec_policy, hpx::threads::thread_priority::initially_bound);
+
             #if HPX_HAVE_ITTNOTIFY != 0 && !defined(HPX_HAVE_APEX)
                 static hpx::util::itt::event ts("TIMER_START");
                 hpx::util::itt::event_tick(ts);
@@ -45,7 +48,7 @@ int hpx_main(hpx::program_options::variables_map& vm)
             
             auto start = std::chrono::high_resolution_clock::now();
             
-            auto end_it = hpx::copy_if(exec_policy,
+            auto end_it = hpx::copy_if(priority_policy,
                 source.begin(), 
                 source.end(), 
                 destination.begin(), 
