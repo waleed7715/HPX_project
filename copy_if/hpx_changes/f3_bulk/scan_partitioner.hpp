@@ -203,6 +203,15 @@ namespace hpx::parallel::util {
                                     size)));
                     }
 
+                    // std::size_t i = 0;
+                    // for (auto const& elem : shape)
+                    // {
+                    //     finalitems.push_back(hpx::parallel::execution::async_execute(
+                    //         stackless_policy.executor(), f3, hpx::get<0>(elem),
+                    //         hpx::get<1>(elem), workitems[i]));
+                    //     i++;
+                    // }
+
                     scoped_params.mark_end_of_scheduling();
                 }
                 catch (...)
