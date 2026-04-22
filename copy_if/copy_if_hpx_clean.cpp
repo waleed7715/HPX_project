@@ -14,7 +14,6 @@ int hpx_main(hpx::program_options::variables_map& vm)
 {
     int input_size = vm["input_size"].as<int>();
     int num_chunks = vm["num_chunks"].as<int>();
-    int iterations = vm["iterations"].as<int>();
 
     int threads = hpx::get_num_worker_threads();
 
@@ -22,20 +21,23 @@ int hpx_main(hpx::program_options::variables_map& vm)
         input_size = 100'000;
     }
 
-    for (int i = 0; i < iterations; ++i) {
-        std::string filename = "test_data_" + std::to_string(input_size) + ".bin";
+    std::vector<int> vector_size{ input_size };
+
+    for (auto size : vector_size)
+    {
+        std::string filename = "test_data_" + std::to_string(size) + ".bin";
         std::vector<int> source = load_vector(filename);
 
         // Define number of chunks
         std::size_t chunk_size = 0;
         if (num_chunks > 0) {
             std::size_t total_chunks = threads * num_chunks;
-            chunk_size = (input_size + total_chunks - 1) / total_chunks;
+            chunk_size = (size + total_chunks - 1) / total_chunks;
         }
 
         auto run = [&](auto exec_policy) {
-            std::vector<int> destination(input_size);
-
+            std::vector<int> destination(size);
+            
             #if HPX_HAVE_ITTNOTIFY != 0 && !defined(HPX_HAVE_APEX)
                 static hpx::util::itt::event ts("TIMER_START");
                 hpx::util::itt::event_tick(ts);
@@ -53,8 +55,8 @@ int hpx_main(hpx::program_options::variables_map& vm)
             auto end = std::chrono::high_resolution_clock::now();
 
             #if HPX_HAVE_ITTNOTIFY != 0 && !defined(HPX_HAVE_APEX)
-                static hpx::util::itt::event e("TIMER_END");
-                hpx::util::itt::event_tick(e);
+                    static hpx::util::itt::event e("TIMER_END");
+                    hpx::util::itt::event_tick(e);
             #endif
             
             destination.resize(std::distance(destination.begin(), end_it));
@@ -62,7 +64,7 @@ int hpx_main(hpx::program_options::variables_map& vm)
             auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
                 end - start).count();
             
-            std::cout << input_size
+            std::cout << size
                 << ", " <<threads
                 << ", " << num_chunks
                 << ", " << destination.size() 
@@ -92,9 +94,6 @@ int main(int argc, char* argv[])
         ("num_chunks",
             hpx::program_options::value<int>()->default_value(0),
             "Number of chunks (0 = default)")
-        ("iterations",
-            hpx::program_options::value<int>()->default_value(1),
-            "Number of iterations (default: 1)")
         ;
     
     hpx::init_params init_args;
