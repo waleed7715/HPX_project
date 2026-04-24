@@ -1,0 +1,1 @@
+Use this capture and highlight some key regions to explain what it initially looks like and explain the number of chunks thing along with the context switch and memory allocation problem

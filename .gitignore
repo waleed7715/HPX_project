@@ -12,3 +12,7 @@ copy_if/csv/.vscode/launch.json
 copy_if/csv/.vscode/settings.json
 copy_if/csv/diff_f3/
 copy_if/csv/new_benchmarks/vtune*
+copy_if/csv/new_benchmarks/optional*
+copy_if/csv/new_benchmarks/problem*
+copy_if/csv/new_benchmarks/temp*
+lsu_masters_project/*

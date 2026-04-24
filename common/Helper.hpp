@@ -49,3 +49,4 @@ bool Pred(const T& value)
 }
 
 #endif
+

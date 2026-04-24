@@ -25,7 +25,7 @@ int hpx_main(hpx::program_options::variables_map& vm)
     }
 
     std::vector<int> vector_size{ input_size };
-    std::vector<int> num_threads{ 1, 2, 4, 8, 12, 16, 24 };
+    std::vector<int> num_threads{ hpx_threads };
 
     for (auto size : vector_size)
     {
@@ -45,10 +45,10 @@ int hpx_main(hpx::program_options::variables_map& vm)
 
             auto run = [&](auto exec_policy) {
                 std::vector<int> destination(size);
-
+                
                 #if HPX_HAVE_ITTNOTIFY != 0 && !defined(HPX_HAVE_APEX)
                     static hpx::util::itt::event ts("TIMER_START");
-                    hpx::util::itt::event_tick(ts);
+                    hpx::util::itt::mark_event mts(ts);
                 #endif
 
                 auto start = std::chrono::high_resolution_clock::now();
@@ -63,8 +63,8 @@ int hpx_main(hpx::program_options::variables_map& vm)
                 auto end = std::chrono::high_resolution_clock::now();
 
                 #if HPX_HAVE_ITTNOTIFY != 0 && !defined(HPX_HAVE_APEX)
-                    static hpx::util::itt::event e("TIMER_END");
-                    hpx::util::itt::event_tick(e);
+                        static hpx::util::itt::event e("TIMER_END");
+                        hpx::util::itt::mark_event m(e);
                 #endif
                 
                 destination.resize(std::distance(destination.begin(), end_it));
