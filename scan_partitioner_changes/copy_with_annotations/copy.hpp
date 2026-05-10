@@ -580,21 +580,15 @@ namespace hpx::parallel {
                     util::in_out_result<FwdIter1, FwdIter3>, std::size_t>
                     scan_partitioner_type;
 
-                auto f1_counter = std::make_shared<std::atomic<int>>(0);
-                
                 auto f1 = [pred = HPX_FORWARD(Pred, pred),
-                            proj = HPX_FORWARD(decltype(proj), proj),
-                            f1_counter](
+                            proj = HPX_FORWARD(decltype(proj), proj)](
                             zip_iterator part_begin,
                             std::size_t part_size) -> std::size_t {
-                
+
                 #if HPX_HAVE_ITTNOTIFY != 0 && !defined(HPX_HAVE_APEX)
                     static hpx::util::itt::domain f1_domain("copy_if");
-
-                    int f1_id = f1_counter->fetch_add(1);
-                    std::string f1_name = "F1_" + std::to_string(f1_id);
-                    hpx::util::itt::string_handle f1_chunk(f1_name.c_str());
-                    hpx::util::itt::task f1_task(f1_domain, f1_chunk);
+                    static hpx::util::itt::string_handle f1_handle("F1");
+                    hpx::util::itt::task f1_task(f1_domain, f1_handle);
                 #endif
                     
                     std::size_t curr = 0;
@@ -616,18 +610,13 @@ namespace hpx::parallel {
                     return curr;
                 };
 
-                auto f3_counter = std::make_shared<std::atomic<int>>(0);
-
-                auto f3 = [dest, flags, f3_counter](zip_iterator part_begin,
+                auto f3 = [dest, flags](zip_iterator part_begin,
                               std::size_t part_size, std::size_t val) mutable {
 
                 #if HPX_HAVE_ITTNOTIFY != 0 && !defined(HPX_HAVE_APEX)
                     static hpx::util::itt::domain f3_domain("copy_if");
-
-                    int f3_id = f3_counter->fetch_add(1);
-                    std::string f3_name = "F3_" + std::to_string(f3_id);
-                    hpx::util::itt::string_handle f3_chunk(f3_name.c_str());
-                    hpx::util::itt::task f3_task(f3_domain, f3_chunk);
+                    static hpx::util::itt::string_handle f3_handle("F3");
+                    hpx::util::itt::task f3_task(f3_domain, f3_handle);
                 #endif
 
                     HPX_UNUSED(flags);
