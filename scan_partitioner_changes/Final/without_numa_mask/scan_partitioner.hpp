@@ -104,17 +104,6 @@ namespace hpx::parallel::util {
                     using value_type =
                         typename std::iterator_traits<FwdIter>::value_type;
 
-                    // NUMA detection commented out: num_numa and
-                    // single_socket_threshold removed.  The three scheduling
-                    // policies below are kept because they drive the real
-                    // performance gains (bound priority, depth-first placement,
-                    // nostack).  Without the LLC threshold we can no longer
-                    // branch between executors, so stackless_policy is used
-                    // unconditionally.
-
-                    // // static std::size_t const num_numa = ...
-                    // // static std::size_t const single_socket_threshold = ...
-
                     auto const priority_policy =
                         hpx::execution::experimental::with_priority(
                             policy, hpx::threads::thread_priority::bound);
