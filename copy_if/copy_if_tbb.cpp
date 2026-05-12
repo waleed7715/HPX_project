@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
     #endif
 
     std::vector<int> vector_size{ 100'000, 10'000'000, 1'000'000'000 };
-    std::vector<int> num_threads{ 1, 2, 4, 8, 16 };
+    std::vector<int> num_threads{ 1, 2, 4, 8, 16, 24 };
 
     for (auto size: vector_size)
     {

@@ -4,9 +4,11 @@
 #include "Random.hpp"
 #include "Helper.hpp"
 
-int main()
+int main(int argc, char* argv[])
 {
-    std::vector<int> vector_size{ 100'000, 10'000'000, 1'000'000'000 };
+    int input_size = (argc > 1) ? std::stoi(argv[1]) : 100'000;
+
+    std::vector<int> vector_size{ input_size };
 
     for (auto size : vector_size)
     {
@@ -14,8 +16,6 @@ int main()
 
         std::string filename = "test_data_" + std::to_string(size) + ".bin";
         std::vector<int> source = load_vector(filename);
-        
-        std::cout << "Source size: " << source.size() << "\n";
     
         std::vector<int> dest(n);
         
@@ -30,9 +30,9 @@ int main()
 
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
         
-        std::cout << "Size: " << n
-            << ", Copied elements: " << dest.size() 
-            << ", Duration: " << duration << " us\n";
+        std::cout << size
+                << ", " << dest.size()
+                << ", " << duration << "\n";
     }
     
     return 0;

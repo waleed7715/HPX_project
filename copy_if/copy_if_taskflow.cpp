@@ -1,5 +1,5 @@
 #include <taskflow/taskflow.hpp>
-#include <taskflow/algorithm/for_each.hpp> 
+#include <taskflow/algorithm/for_each.hpp>
 
 #include "Random.hpp"
 #include "Helper.hpp"
@@ -8,116 +8,103 @@
 #include <ittnotify.h>
 #endif
 
-void copy_if_taskflow(const std::vector<int>& source, int threads)
-{
-    tf::Executor executor(threads);
-    tf::Taskflow taskflow;
-
-    const size_t n = source.size();
-
-    std::vector<bool> flags(n, false);
-    std::vector<size_t> local_counts(threads, 0);
-    const size_t chunk_size = (n + threads - 1) / threads;
-    std::vector<int> destination(n);
-
-    #ifdef HAVE_VTUNE
-    __itt_resume();
-    #endif
-
-    auto start = std::chrono::high_resolution_clock::now();
-
-    taskflow.for_each_index(
-        size_t(0), size_t(threads), size_t(1),
-        [&](size_t thread_id)
-        {
-            const size_t start_idx = thread_id * chunk_size;
-            const size_t end_idx = std::min(start_idx + chunk_size, n);
-            size_t local_count = 0;
-
-            for (size_t i = start_idx; i < end_idx; ++i)
-            {
-                flags[i] = Pred(source[i]);
-                if (flags[i])
-                {
-                    ++local_count;
-                }
-            }
-
-            local_counts[thread_id] = local_count;
-        }
-    );
-
-    executor.run(taskflow).wait();
-    taskflow.clear();
-
-    std::vector<size_t> offsets(threads);
-    offsets[0] = 0;
-    for (size_t i = 1; i < threads; ++i)
-    {
-        offsets[i] = offsets[i - 1] + local_counts[i - 1];
-    }
-
-    size_t total_count = offsets[threads - 1] + local_counts[threads - 1];
-
-    taskflow.for_each_index(
-        size_t(0), size_t(threads), size_t(1),
-        [&](size_t thread_id)
-        {
-            const size_t start_idx = thread_id * chunk_size;
-            const size_t end_idx = std::min(start_idx + chunk_size, n);
-
-            size_t write_idx = offsets[thread_id];
-
-            for (size_t i = start_idx; i < end_idx; ++i)
-            {
-                if (flags[i])
-                {
-                    destination[write_idx++] = source[i];
-                }
-            }
-        }
-    );
-
-    executor.run(taskflow).wait();
-
-    auto end = std::chrono::high_resolution_clock::now();
-
-    #ifdef HAVE_VTUNE
-    __itt_pause();
-    #endif
-
-    destination.resize(total_count);
-
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-
-    std::cout << "Size: " << n
-        << ",  Threads: " << threads
-        << ", Copied elements: " << destination.size() 
-        << ", Duration: " << duration << " us\n";
-}
-
 int main(int argc, char* argv[])
 {
-    #ifdef HAVE_VTUNE
-    __itt_pause();
-    #endif
+    int input_size = 100'000;
+    int threads    = 1;
+    int runs       = 1;
 
-    std::vector<int> vector_size{ 100'000, 10'000'000, 1'000'000'000 };
-    std::vector<int> num_threads{ 1, 2, 4, 8, 16 };
-
-    for (auto size: vector_size)
-    {
-        std::cout << "Source size: " << size << "\n";
-
-        const size_t n = static_cast<size_t>(size);
-
-        std::string filename = "test_data_" + std::to_string(size) + ".bin";
-        std::vector<int> source = load_vector(filename);
-
-        for (auto threads: num_threads)
-        {
-            copy_if_taskflow(source, threads);
-        }
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if      (arg.rfind("--input_size=", 0) == 0) input_size = std::stoi(arg.substr(13));
+        else if (arg.rfind("--threads=",    0) == 0) threads    = std::stoi(arg.substr(10));
+        else if (arg.rfind("--runs=",       0) == 0) runs       = std::stoi(arg.substr(7));
     }
+
+    tf::Executor executor(threads);
+
+    std::string filename = "test_data_" + std::to_string(input_size) + ".bin";
+    std::vector<int> source = load_vector(filename);
+    const size_t n          = source.size();
+    const size_t chunk_size = (n + static_cast<size_t>(threads) - 1)
+                              / static_cast<size_t>(threads);
+
+    std::vector<uint8_t> flags(n);
+    std::vector<size_t>  local_counts(threads, 0);
+    std::vector<size_t>  offsets(threads, 0);
+    std::vector<int>     destination(n);
+
+    for (int r = 0; r < runs; ++r) {
+
+        size_t total_count = 0;
+        tf::Taskflow taskflow;
+
+        #ifdef HAVE_VTUNE
+        __itt_resume();
+        #endif
+
+        auto start = std::chrono::high_resolution_clock::now();
+
+        // Phase 1 (F1): evaluate predicate
+        auto f1 = taskflow.for_each_index(
+            size_t(0), static_cast<size_t>(threads), size_t(1),
+            [&](size_t chunk_id) {
+                const size_t lo = chunk_id * chunk_size;
+                const size_t hi = std::min(lo + chunk_size, n);
+                size_t cnt = 0;
+                for (size_t i = lo; i < hi; ++i) {
+                    uint8_t v = Pred(source[i]) ? 1u : 0u;
+                    flags[i]  = v;
+                    cnt       += v;
+                }
+                local_counts[chunk_id] = cnt;
+            }
+        );
+
+        // Phase 2 (F2): sequential prefix sum
+        auto f2 = taskflow.emplace([&]() {
+            size_t running = 0;
+            for (int i = 0; i < threads; ++i) {
+                offsets[i] = running;
+                running   += local_counts[i];
+            }
+            total_count = running;
+        });
+
+        // Phase 3 (F3): scatter
+        auto f3 = taskflow.for_each_index(
+            size_t(0), static_cast<size_t>(threads), size_t(1),
+            [&](size_t chunk_id) {
+                const size_t lo  = chunk_id * chunk_size;
+                const size_t hi  = std::min(lo + chunk_size, n);
+                size_t out = offsets[chunk_id];
+                for (size_t i = lo; i < hi; ++i) {
+                    if (flags[i])
+                        destination[out++] = source[i];
+                }
+            }
+        );
+
+        f1.precede(f2);
+        f2.precede(f3);
+
+        executor.run(taskflow).wait();
+
+        auto end = std::chrono::high_resolution_clock::now();
+
+        #ifdef HAVE_VTUNE
+        __itt_pause();
+        #endif
+
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+            end - start).count();
+
+        std::cout << input_size
+            << ", " << threads
+            << ", " << 0
+            << ", " << total_count
+            << ", " << duration << "\n";
+    }
+
     return 0;
 }

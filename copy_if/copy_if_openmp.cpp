@@ -7,109 +7,104 @@
 #include <ittnotify.h>
 #endif
 
-void copy_if_openmp(const std::vector<int>& source, int threads)
-{
-    omp_set_num_threads(threads);
-    
-    const size_t n = source.size();
-
-    std::vector<bool> flags(n, false);
-    std::vector<size_t> local_counts(threads, 0);
-    std::vector<size_t> offsets(threads);
-    std::vector<int> destination(n);
-
-    #ifdef HAVE_VTUNE
-    __itt_resume();
-    #endif
-
-    auto start = std::chrono::high_resolution_clock::now();
-
-    #pragma omp parallel
-    {
-        const int thread_id = omp_get_thread_num();
-
-        const size_t chunk_size = (n + threads - 1) / threads;
-        const size_t start_idx = thread_id * chunk_size;
-        const size_t end_idx = std::min(start_idx + chunk_size, n);
-
-        size_t local_count = 0;
-        for (size_t i = start_idx; i < end_idx; ++i)
-        {
-            flags[i] = Pred(source[i]);
-            if (flags[i])
-            {
-                ++local_count;
-            }
-        }
-
-        local_counts[thread_id] = local_count;
-    }
-
-    size_t total_count = 0;
-    for (size_t i = 0; i < local_counts.size(); ++i)
-    {
-        offsets[i] = total_count;
-        total_count += local_counts[i];
-    }   
-
-    #pragma omp parallel
-    {
-        const int thread_id = omp_get_thread_num();
-        const int n_threads = omp_get_num_threads();
-
-        const size_t chunk_size = (n + n_threads - 1) / n_threads;
-        const size_t start_idx = thread_id * chunk_size;
-        const size_t end_idx = std::min(start_idx + chunk_size, n);
-
-        size_t local_offset = offsets[thread_id];
-
-        for (size_t i = start_idx; i < end_idx; ++i)
-        {
-            if (flags[i])
-            {
-                destination[local_offset++] = source[i];
-            }
-        }
-    }
-
-    auto end = std::chrono::high_resolution_clock::now();
-
-    #ifdef HAVE_VTUNE
-    __itt_pause();
-    #endif
-
-    destination.resize(total_count);
-
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-
-    std::cout << "Size: " << n
-        << ",  Threads: " << threads
-        << ", Copied elements: " << destination.size() 
-        << ", Duration: " << duration << " us\n";
-}
-
 int main(int argc, char* argv[])
 {
-    #ifdef HAVE_VTUNE
-    __itt_pause();
-    #endif
+    int input_size = 100'000;
+    int threads    = 1;
+    int runs       = 1;
 
-    std::vector<int> vector_size{ 100'000, 10'000'000, 1'000'000'000 };
-    std::vector<int> num_threads{ 1, 2, 4, 8, 16 };
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if      (arg.rfind("--input_size=", 0) == 0) input_size = std::stoi(arg.substr(13));
+        else if (arg.rfind("--threads=",    0) == 0) threads    = std::stoi(arg.substr(10));
+        else if (arg.rfind("--runs=",       0) == 0) runs       = std::stoi(arg.substr(7));
+    }
 
-    for (auto size: vector_size)
+    omp_set_num_threads(threads);
+
+    std::string filename = "test_data_" + std::to_string(input_size) + ".bin";
+    std::vector<int> source = load_vector(filename);
+    const size_t n = source.size();
+
+    std::vector<uint8_t> flags(n);
+    std::vector<size_t>  local_counts(threads, 0);
+    std::vector<size_t>  offsets(threads, 0);
+    std::vector<int>     destination(n);
+
+    #pragma omp parallel
     {
-        const size_t n = static_cast<size_t>(size);
+        const int    tid   = omp_get_thread_num();
+        const int    nthr  = omp_get_num_threads();
+        const size_t chunk = (n + nthr - 1) / nthr;
+        const size_t lo    = static_cast<size_t>(tid) * chunk;
+        const size_t hi    = std::min(lo + chunk, n);
+        for (size_t i = lo; i < hi; ++i)
+            destination[i] = 0;
+    }
 
-        std::string filename = "test_data_" + std::to_string(size) + ".bin";
-        std::vector<int> source = load_vector(filename);
-        
-        std::cout << "Source size: " << source.size() << "\n";
+    for (int r = 0; r < runs; ++r) {
 
-        for (auto threads: num_threads)
+        size_t total_count = 0;
+
+        #ifdef HAVE_VTUNE
+        __itt_resume();
+        #endif
+
+        auto start = std::chrono::high_resolution_clock::now();
+
+        #pragma omp parallel shared(total_count)
         {
-            copy_if_openmp(source, threads);
+            const int    tid   = omp_get_thread_num();
+            const int    nthr  = omp_get_num_threads();
+            const size_t chunk = (n + nthr - 1) / nthr;
+            const size_t lo    = static_cast<size_t>(tid) * chunk;
+            const size_t hi    = std::min(lo + chunk, n);
+
+            // Phase 1 (F1): evaluate predicate
+            size_t cnt = 0;
+            for (size_t i = lo; i < hi; ++i) {
+                uint8_t v = Pred(source[i]) ? 1u : 0u;
+                flags[i]  = v;
+                cnt       += v;
+            }
+            local_counts[tid] = cnt;
+
+            // Barrier
+            #pragma omp barrier
+
+            // Phase 2 (F2): sequential prefix sum
+            #pragma omp single
+            {
+                size_t running = 0;
+                for (int i = 0; i < nthr; ++i) {
+                    offsets[i] = running;
+                    running   += local_counts[i];
+                }
+                total_count = running;
+            }
+
+            // Phase 3 (F3): scatter matching elements to their output positions
+            size_t out = offsets[tid];
+            for (size_t i = lo; i < hi; ++i) {
+                if (flags[i])
+                    destination[out++] = source[i];
+            }
         }
+
+        auto end = std::chrono::high_resolution_clock::now();
+
+        #ifdef HAVE_VTUNE
+        __itt_pause();
+        #endif
+
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
+            end - start).count();
+
+        std::cout << input_size
+            << ", " << threads
+            << ", " << 0
+            << ", " << total_count
+            << ", " << duration << "\n";
     }
 
     return 0;

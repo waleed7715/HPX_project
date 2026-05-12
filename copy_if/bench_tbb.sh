@@ -1,6 +1,6 @@
 #!/bin/bash
 
-RUNS=10
+RUNS=20
 INPUT_SIZES=(100000 10000000 1000000000)
 
 PSTL_OUT="results_tbb_pstl.csv"
@@ -12,7 +12,7 @@ for INPUT_SIZE in "${INPUT_SIZES[@]}"; do
 
     echo "Running TBB PSTL (parallel scan)..."
     for run in $(seq 1 $RUNS); do
-        ./build/bench_tbb $INPUT_SIZE 0 | while IFS= read -r line; do
+        ./build/copy_if_std_par $INPUT_SIZE 0 | while IFS= read -r line; do
             echo "$line,$run"
         done >> $PSTL_OUT
     done
