@@ -11,18 +11,17 @@
 
 #include <hpx/config.hpp>
 #include <hpx/assert.hpp>
+#include <hpx/iterator_support/counting_shape.hpp>
 #include <hpx/modules/async_combinators.hpp>
+#include <hpx/modules/coroutines.hpp>
 #include <hpx/modules/errors.hpp>
 #include <hpx/modules/execution.hpp>
-#include <hpx/iterator_support/counting_shape.hpp>
 #include <hpx/parallel/util/detail/chunk_size.hpp>
 #include <hpx/parallel/util/detail/handle_local_exceptions.hpp>
 #include <hpx/parallel/util/detail/scoped_executor_parameters.hpp>
 #include <hpx/parallel/util/detail/select_partitioner.hpp>
+#include <hpx/runtime_local/get_num_all_localities.hpp>
 #include <hpx/topology/topology.hpp>
-#include <hpx/modules/coroutines.hpp>
-#include <hpx/modules/resource_partitioner.hpp>
-#include <hpx/modules/runtime_local.hpp>
 
 #if !defined(HPX_COMPUTE_DEVICE_CODE)
 #include <hpx/modules/async_local.hpp>
@@ -31,6 +30,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <exception>
+#include <iterator>
 #include <list>
 #include <tuple>
 #include <type_traits>
@@ -101,82 +101,29 @@ namespace hpx::parallel::util {
                     // schedule every chunk on a separate thread
                     std::size_t size = hpx::util::size(shape);
 
-                    using value_type =
-                        typename std::iterator_traits<FwdIter>::value_type;
-
-                    // Computed once per process: number of NUMA domains that
-                    // actually have HPX worker threads assigned.  When the
-                    // thread count is <= cores per domain (e.g. 12 threads on
-                    // a 12-core/NUMA machine) all workers land on NUMA0 and
-                    // this returns 1, so the threshold correctly reflects the
-                    // full LLC of the single active domain.
-                    static std::size_t const num_numa = []() -> std::size_t {
-                        auto& topo = hpx::threads::create_topology();
-                        if (topo.get_number_of_numa_nodes() <= 1) return 1;
-
-                        auto const& rp = hpx::resource::get_partitioner();
-                        std::size_t const num_workers =
-                            hpx::get_num_worker_threads();
-                        std::size_t active = 0;
-                        std::uint64_t seen = 0;
-                        for (std::size_t i = 0; i != num_workers; ++i)
-                        {
-                            std::size_t const domain =
-                                topo.get_numa_node_number(rp.get_pu_num(i));
-                            std::uint64_t const bit =
-                                std::uint64_t(1) << domain;
-                            if (!(seen & bit))
-                            {
-                                seen |= bit;
-                                ++active;
-                            }
-                        }
-                        return (active > 0) ? active : 1;
-                    }();
-
-                    // Computed once per process: query the LLC size of the machine
-                    // at runtime so the threshold adapts without recompilation.
-                    // get_cache_size() requires a CPU mask; we use core 0's mask to
-                    // get one socket's L3 size, then divide by num_numa (each socket
-                    // only sees its own LLC share) and by 2 for input+output
-                    // buffers being live simultaneously during the scan.
-                    // Falls back to 1M elements if hwloc returns 0.
-                    static std::size_t const single_socket_threshold =
-                        []() -> std::size_t {
-                        auto& topo = hpx::threads::create_topology();
-                        auto const mask = topo.get_core_affinity_mask(0);
-                        std::size_t const llc_bytes = topo.get_cache_size(mask, 3);
-                        std::size_t const fallback = 1'000'000 * sizeof(value_type);
-                        std::size_t const effective_llc =
-                            (llc_bytes > 0) ? llc_bytes : fallback;
-                        return (effective_llc / num_numa / 2) / sizeof(value_type);
-                    }();
-
                     auto const priority_policy =
                         hpx::execution::experimental::with_priority(
                             policy, hpx::threads::thread_priority::bound);
 
                     auto const hinted_policy =
-                        hpx::execution::experimental::with_hint(
-                            priority_policy,
-                            hpx::threads::thread_schedule_hint{
-                                hpx::threads::thread_placement_hint::depth_first});
+                        hpx::execution::experimental::with_hint(priority_policy,
+                            hpx::threads::thread_schedule_hint{hpx::threads::
+                                    thread_placement_hint::depth_first});
 
-                    auto const stackless_policy =
+                    auto const f1f3_stacksize =
+                        hpx::get_initial_num_localities() > 1 ?
+                        hpx::threads::thread_stacksize::default_ :
+                        hpx::threads::thread_stacksize::nostack;
+
+                    auto const f1f3_policy =
                         hpx::execution::experimental::with_stacksize(
-                            hinted_policy, hpx::threads::thread_stacksize::nostack);
+                            hinted_policy, f1f3_stacksize);
 
-                    auto const& f1f3_exec =
-                        (count_ < single_socket_threshold)
-                        ? stackless_policy.executor()
-                        : hinted_policy.executor();
+                    auto const& f1f3_exec = f1f3_policy.executor();
 
                     // If the size of count was enough to warrant testing for a
                     // chunk, pre-initialize second intermediate result and
-                    // start f3 for that test chunk immediately (its prefix is
-                    // simply init = workitems[0]).  workitems[1] is left as the
-                    // raw f1 result so the f2 sequential pass below sees it
-                    // exactly once.
+                    // start f3.
                     bool const had_test_chunk = (workitems.size() == 2);
                     if (had_test_chunk)
                     {
@@ -185,9 +132,8 @@ namespace hpx::parallel::util {
                         workitems.reserve(size + 2);
                         finalitems.reserve(size + 1);
 
-                        finalitems.push_back(
-                            execution::async_execute(f1f3_exec,
-                                f3, first_, count_ - count, workitems[0]));
+                        finalitems.push_back(execution::async_execute(f1f3_exec,
+                            f3, first_, count_ - count, workitems[0]));
                     }
                     else
                     {
@@ -204,8 +150,8 @@ namespace hpx::parallel::util {
                             hpx::parallel::execution::bulk_sync_execute(
                                 f1f3_exec,
                                 [&f1](auto const& elem) {
-                                    return HPX_INVOKE(
-                                        f1, hpx::get<0>(elem), hpx::get<1>(elem));
+                                    return HPX_INVOKE(f1, hpx::get<0>(elem),
+                                        hpx::get<1>(elem));
                                 },
                                 shape);
 
@@ -213,11 +159,7 @@ namespace hpx::parallel::util {
                             workitems.push_back(HPX_MOVE(result));
                     }
 
-                    // perform f2 sequentially in one go.
-                    // When a test chunk was used, workitems[1] already holds the
-                    // raw f1 result for that chunk; the loop processes it once
-                    // together with the rest, producing correct prefix sums in
-                    // workitems[1..N].
+                    // perform f2 sequentially in one go
                     {
 #if HPX_HAVE_ITTNOTIFY != 0 && !defined(HPX_HAVE_APEX)
                         static hpx::util::itt::event e("F2_START");
@@ -231,11 +173,7 @@ namespace hpx::parallel::util {
                         }
                     }
 
-                    // F3 return type is void.
-                    // When a test chunk was used, its f3 was already launched in
-                    // finalitems above.  The bulk below covers shape[0..size-1]
-                    // which correspond to workitems[f3_offset .. f3_offset+size-1]
-                    // (the prefix sums that precede each remaining chunk).
+                    // start all f3 tasks
                     {
 #if HPX_HAVE_ITTNOTIFY != 0 && !defined(HPX_HAVE_APEX)
                         static hpx::util::itt::event e("F3_START");
@@ -245,11 +183,13 @@ namespace hpx::parallel::util {
                         hpx::parallel::execution::bulk_sync_execute(
                             f1f3_exec,
                             [f3, workitems, shape = HPX_MOVE(shape), f3_offset](
-                                std::size_t idx) {
-                                auto it = std::next(
-                                    hpx::util::begin(shape), idx);
-                                HPX_INVOKE(f3, hpx::get<0>(*it),
-                                    hpx::get<1>(*it), workitems[idx + f3_offset]);
+                                std::size_t idx) mutable {
+                                auto it =
+                                    std::next(hpx::util::begin(shape), idx);
+                                auto f3_copy = f3;
+                                HPX_INVOKE(f3_copy, hpx::get<0>(*it),
+                                    hpx::get<1>(*it),
+                                    workitems[idx + f3_offset]);
                             },
                             hpx::util::counting_shape<std::size_t>(size));
                     }
@@ -308,8 +248,7 @@ namespace hpx::parallel::util {
             template <typename ExPolicy_, typename FwdIter, typename T,
                 typename F1, typename F2, typename F3, typename F4>
             static hpx::future<R> call(ExPolicy_&& policy, FwdIter first,
-                std::size_t count, T&& init, F1&& f1, F2&& f2, F3&& f3,
-                F4&& f4)
+                std::size_t count, T&& init, F1&& f1, F2&& f2, F3&& f3, F4&& f4)
             {
                 return execution::async_execute(policy.executor(),
                     [first, count, policy, init = HPX_FORWARD(T, init),

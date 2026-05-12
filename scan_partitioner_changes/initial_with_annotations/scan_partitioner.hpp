@@ -166,7 +166,6 @@ namespace hpx::parallel::util {
                             f2results[i] = result;
                         }
                     }
-
                     
                     // start all f3 tasks
                     {
